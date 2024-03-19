@@ -1,0 +1,416 @@
+﻿Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+
+F.Intrinsic.Control.Try
+	F.ODBC.Connection!con.OpenCompanyConnection
+	f.Intrinsic.Control.SelectCase(V.Caller.Hook)	
+		'Order header populate'
+		F.Intrinsic.Control.Case("11560")
+			F.Intrinsic.Control.CallSub(AddButton)
+		'Browser button click
+		F.Intrinsic.Control.Case("11950")
+			F.Intrinsic.Control.CallSub(ShowBrowser)
+		'Save header
+		F.Intrinsic.Control.Case("11872")
+			F.Intrinsic.Control.CallSub(SaveHeader)
+		'Load header
+		F.Intrinsic.Control.Case("11565")
+			F.Intrinsic.Control.CallSub(LoadHeader)
+		'Freight Button
+		F.Intrinsic.Control.Case("11830")
+			F.Intrinsic.Control.CallSub(FreightButton)
+		'Freight Populate
+		F.Intrinsic.Control.Case("36310")
+			F.Intrinsic.Control.CallSub(FreightPopulate)			
+		'Lines Prod Line Change
+		F.Intrinsic.Control.Case("12045")
+			F.Intrinsic.Control.CallSub(ProdLineChange)
+		
+	f.Intrinsic.Control.EndSelect
+			
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.AddButton.Start
+f.Intrinsic.Control.Try
+
+		'FOR LABEL
+	'Set horizontal position
+	f.Intrinsic.Variable.SetProperty("GAB-LBL-1","PL",600)
+	'Set vertical position
+	F.Intrinsic.Variable.SetProperty("GAB-LBL-1","PT",74)
+	f.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-LBL-1,"HIDE",0)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-LBL-1,"LOCK",0)
+	f.Intrinsic.Variable.SetProperty("GAB-LBL-1","PW",65)
+	V.Passed.GAB-LBL-1.Set("Division Code")	
+
+	'FOR BTN
+	'Set horizontal position
+	f.Intrinsic.Variable.SetProperty("GAB-BTN-1","PL",650)
+	'Set vertical position
+	F.Intrinsic.Variable.SetProperty("GAB-BTN-1","PT",88)
+	f.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-BTN-1,"HIDE",0)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-BTN-1,"LOCK",0)
+	f.Intrinsic.Variable.SetProperty("GAB-BTN-1","PW",20)
+	V.Passed.GAB-BTN-1.Set("^")
+	
+	'FOR TXT
+	'Set horizontal position
+	f.Intrinsic.Variable.SetProperty("GAB-TEXT-1","PL",600)
+	'Set vertical position
+	F.Intrinsic.Variable.SetProperty("GAB-TEXT-1","PT",90)
+	f.Intrinsic.UI.ChangeCallerProperty(v.Passed.GAB-TEXT-1,"HIDE",0)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.GAB-TEXT-1,"LOCK",1)
+	
+	f.Intrinsic.Variable.SetProperty("GAB-TEXT-1","PW",40)
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.AddButton.End
+
+Program.Sub.ShowBrowser.Start
+v.Local.sRet.Declare
+v.Local.sTemp.Declare
+v.Local.sTitles.Declare
+v.Local.iWidths.Declare
+v.Local.sPadOrderNo.Declare
+v.Local.sCustomPath.Declare
+v.Local.sSQL.Declare
+f.Intrinsic.Control.Try
+
+	Function.Intrinsic.String.Split("Division Code*!*Description*!*GL Account Start","*!*",variable.local.sTitles)
+	Function.Intrinsic.String.Split("1000*!*800*!*800","*!*",variable.local.iWidths)
+	Function.Intrinsic.UI.Browser("Select a Division","con","Select * from GCG_6896_DIV_GL order by GL_ACC_START",Variable.Local.sTitles,Variable.Local.iWidths,Variable.Local.sRet)
+
+	
+	f.Intrinsic.Control.If(v.Local.sRet,<>,"***CANCEL***")
+		f.Intrinsic.String.Split(Variable.Local.sRet,"*!*",v.Local.sRet)
+		v.Passed.GAB-TEXT-1.Set(v.Local.sRet(0))
+		
+	f.Intrinsic.String.Build("Select GL_ACC_START from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",v.Passed.GAB-TEXT-1,v.Local.sSQL)
+	f.ODBC.Connection!con.OpenRecordsetRW("rst",v.Local.sSQL)
+	
+	f.Intrinsic.Control.If(v.ODBC.con!rst.EOF,=,false)
+		F.Intrinsic.String.LPad(V.Passed.000003,"0",7,v.Local.sPadOrderNo)
+		f.Intrinsic.String.Build("{0}\CUSTOM\DIV.txt",v.Caller.GlobalDir,v.Local.sCustomPath)		
+		f.Intrinsic.String.Build("{0}*!*{1}*!*{2}",v.Passed.GAB-TEXT-1,v.Local.sPadOrderNo,v.ODBC.con!rst.FieldVal!GL_ACC_START,v.Local.sRet)		
+		f.Intrinsic.File.String2File(v.Local.sCustomPath,v.Local.sRet)
+	f.Intrinsic.Control.EndIf
+		
+		
+	f.Intrinsic.Control.EndIf
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.ShowBrowser.End
+
+Program.Sub.SaveHeader.Start
+v.Local.sRet.Declare
+v.Local.sPadOrderNo.Declare
+v.Local.sSQL.Declare
+v.Local.iRet.Declare
+v.Local.sCustomPath.Declare
+f.Intrinsic.Control.Try
+
+	F.Intrinsic.String.LPad(V.Passed.000003,"0",7,v.Local.sPadOrderNo)
+	
+	f.Intrinsic.String.Build("Select * from GCG_6896_ORDER_DIV where ORDER_NO = '{0}'",v.Local.sPadOrderNo,v.Local.sSQL)
+	
+	f.ODBC.Connection!con.OpenRecordsetRW("rst",v.Local.sSQL)
+	
+	f.Intrinsic.String.Build("Select * from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",V.Passed.GAB-TEXT-1,v.Local.sSQL)
+	f.ODBC.Connection!con.OpenRecordsetRW("rst2",v.Local.sSQL)
+	
+	f.Intrinsic.Control.If(v.ODBC.con!rst2.EOF,=,true)
+		f.Intrinsic.UI.Msgbox("Division Code not found. Please Enter existing Division Code","",0,v.Local.iRet)
+		f.ODBC.con!rst2.Close()		
+				
+		F.Intrinsic.String.LPad(V.Passed.000003,"0",7,v.Local.sPadOrderNo)
+		f.Intrinsic.String.Build("{0}\CUSTOM\DIV.txt",v.Caller.GlobalDir,v.Local.sCustomPath)		
+		f.Intrinsic.String.Build("{0}*!*{1}*!*{2}",v.Passed.GAB-TEXT-1,v.Local.sPadOrderNo,"",v.Local.sRet)		
+		f.Intrinsic.File.String2File(v.Local.sCustomPath,v.Local.sRet)
+				
+		f.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	
+	'Add new record if records doesn't exist. Alter record if order_no already has a record.
+	f.Intrinsic.Control.If(v.ODBC.con!rst.EOF,=,true)
+		F.ODBC.con!rst.AddNew
+		f.ODBC.con!rst.Set!ORDER_NO(v.Local.sPadOrderNo)
+		f.ODBC.con!rst.Set!DIVISION(V.Passed.GAB-TEXT-1)
+		F.ODBC.con!rst.Update	
+	f.Intrinsic.Control.Else
+		f.ODBC.con!rst.Set!ORDER_NO(v.Local.sPadOrderNo)
+		f.ODBC.con!rst.Set!DIVISION(V.Passed.GAB-TEXT-1)
+		F.ODBC.con!rst.Update		
+	f.Intrinsic.Control.EndIf
+	
+	f.ODBC.con!rst.Close()
+	f.ODBC.con!rst2.Close()
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.SaveHeader.End
+
+Program.Sub.LoadHeader.Start
+v.Local.sRet.Declare
+v.Local.sPadOrderNo.Declare
+v.Local.sSQL.Declare
+v.Local.sCustomPath.Declare
+f.Intrinsic.Control.Try
+
+	F.Intrinsic.String.LPad(V.Passed.000003,"0",7,v.Local.sPadOrderNo)
+	
+	f.Intrinsic.String.Build("Select * from GCG_6896_ORDER_DIV where ORDER_NO = '{0}'",v.Local.sPadOrderNo,v.Local.sSQL)
+
+	f.ODBC.Connection!con.OpenRecordsetRW("rst",v.Local.sSQL)
+	
+	'If Division found fill text box, don't if no division found
+	f.Intrinsic.Control.If(v.ODBC.con!rst.EOF,=,false)
+		v.Passed.GAB-TEXT-1.Set(v.ODBC.con!rst.FieldVal!DIVISION)			
+		f.Intrinsic.String.Build("Select GL_ACC_START from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",v.ODBC.con!rst.FieldVal!DIVISION,v.Local.sSQL)
+		f.ODBC.Connection!con.OpenRecordsetRW("rst2",v.Local.sSQL)
+	
+		f.Intrinsic.String.Build("{0}\CUSTOM\DIV.txt",v.Caller.GlobalDir,v.Local.sCustomPath)		
+		f.Intrinsic.String.Build("{0}*!*{1}*!*{2}",v.ODBC.con!rst.FieldVal!DIVISION,v.Local.sPadOrderNo,v.ODBC.con!rst2.FieldVal!GL_ACC_START,v.Local.sRet)
+		
+		f.Intrinsic.File.String2File(v.Local.sCustomPath,v.Local.sRet)
+		f.ODBC.con!rst2.Close()
+	f.Intrinsic.Control.Else
+		v.Passed.GAB-TEXT-1.Set("")
+		f.Intrinsic.String.Build("{0}\CUSTOM\DIV.txt",v.Caller.GlobalDir,v.Local.sCustomPath)		
+		f.Intrinsic.String.Build("{0}*!*{1}*!*{2}"," ",v.Local.sPadOrderNo," ",v.Local.sRet)
+		f.Intrinsic.File.String2File(v.Local.sCustomPath,v.Local.sRet)
+	f.Intrinsic.Control.EndIf
+	
+	f.ODBC.con!rst.Close()
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+
+Program.Sub.LoadHeader.End
+
+Program.Sub.FreightButton.Start
+v.Local.sCustomPath.Declare
+v.Local.sRet.Declare
+v.Local.sPadOrderNo.Declare
+v.Local.sSQL.Declare
+v.Local.iRet.Declare
+v.Local.sGLAccount.Declare
+f.Intrinsic.Control.Try
+	
+	f.Intrinsic.String.Build("Select GL_ACC_START from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",v.Passed.GAB-TEXT-1,v.Local.sSQL)
+	f.ODBC.Connection!con.OpenRecordsetRW("rst",v.Local.sSQL)
+	
+	f.Intrinsic.Control.If(v.ODBC.con!rst.EOF,=,false)
+		F.Intrinsic.String.LPad(V.Passed.000003,"0",7,v.Local.sPadOrderNo)
+		'f.Intrinsic.String.Build("{0}-504-000",v.ODBC.con!rst.FieldVal!GL_ACC_START,v.Local.sGLAccount)
+		f.Intrinsic.String.Build("{0}\CUSTOM\DIV.txt",v.Caller.GlobalDir,v.Local.sCustomPath)		
+		f.Intrinsic.String.Build("{0}*!*{1}*!*{2}",v.Passed.GAB-TEXT-1,v.Local.sPadOrderNo,v.ODBC.con!rst.FieldVal!GL_ACC_START,v.Local.sRet)		
+		f.Intrinsic.File.String2File(v.Local.sCustomPath,v.Local.sRet)
+	f.Intrinsic.Control.EndIf
+	
+	f.ODBC.con!rst.Close()
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.FreightButton.End
+
+Program.Sub.FreightPopulate.Start
+v.Local.sSQL.Declare
+v.Local.sDivCode.Declare
+v.Local.sCustomPath.Declare
+v.Local.sGLAccount.Declare
+f.Intrinsic.Control.Try
+
+	f.Intrinsic.String.Build("{0}\CUSTOM\DIV.txt",v.Caller.GlobalDir,v.Local.sCustomPath)
+	f.Intrinsic.File.File2String(v.Local.sCustomPath,v.Local.sDivCode)
+	f.Intrinsic.String.Split(v.Local.sDivCode,"*!*",v.Local.sDivCode)
+	
+	f.Intrinsic.String.Build("Select GL_ACC_START from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",v.Local.sDivCode(0),v.Local.sSQL)
+		
+	f.ODBC.Connection!con.OpenRecordsetRW("rst",v.Local.sSQL)
+	'f.Intrinsic.String.Build("{0}-504-000",v.ODBC.con!rst.FieldVal!GL_ACC_START,v.Local.sGLAccount)
+	f.Intrinsic.String.Build("{0}",v.ODBC.con!rst.FieldVal!GL_ACC_START,v.Local.sGLAccount)
+	f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+	
+	f.Intrinsic.Control.If(v.ODBC.con!rst.EOF,=,false)
+		v.Passed.000003.Set(v.Local.sGLAccount)		
+	f.Intrinsic.Control.Else
+		v.Passed.000003.Set("")
+	f.Intrinsic.Control.EndIf
+	
+	'Lock text box and hide browser
+	f.Intrinsic.UI.ChangeCallerProperty(v.Passed.000003,"LOCK",1)
+	F.Intrinsic.UI.ChangeCallerProperty(V.Passed.000004,"HIDE",1)
+	
+	f.ODBC.con!rst.Close()
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.FreightPopulate.End
+
+Program.Sub.ProdLineChange.Start
+v.Local.sSQL.Declare
+v.Local.sSQL2.Declare
+v.Local.sDivCode.Declare
+v.Local.sCustomPath.Declare
+v.Local.sGLAccount.Declare
+v.Local.sGLAccountSplit.Declare
+f.Intrinsic.Control.Try
+
+	f.Intrinsic.String.Build("{0}\CUSTOM\DIV.txt",v.Caller.GlobalDir,v.Local.sCustomPath)
+	f.Intrinsic.File.File2String(v.Local.sCustomPath,v.Local.sDivCode)
+	f.Intrinsic.String.Split(v.Local.sDivCode,"*!*",v.Local.sDivCode)
+	
+	f.Intrinsic.String.Build("Select GL_ACC_START from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",v.Local.sDivCode(0),v.Local.sSQL)	
+	f.ODBC.Connection!con.OpenRecordsetRW("rst",v.Local.sSQL)		
+
+	f.Intrinsic.Control.If(v.ODBC.con!rst.EOF,<>,true)
+		f.Intrinsic.String.Split(v.ODBC.con!rst.FieldVal!GL_ACC_START,"-",v.Local.sGLAccountSplit)
+		
+		f.Intrinsic.Control.SelectCase(v.Passed.000013)	
+		
+			
+			F.Intrinsic.Control.Case("BM")
+				f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("BR")
+				f.Intrinsic.String.Build("{0}-501-001",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("CC")
+			f.Intrinsic.String.Build("{0}-501-001",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("CH")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("CM")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("CR")
+			f.Intrinsic.String.Build("{0}-501-001",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("HM")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("HR")
+			f.Intrinsic.String.Build("{0}-501-001",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("LB")
+			f.Intrinsic.String.Build("{0}-501-005",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("LF")
+			f.Intrinsic.String.Build("{0}-501-005",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("LW")
+			f.Intrinsic.String.Build("{0}-501-005",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("OM")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("OR")
+			f.Intrinsic.String.Build("{0}-501-001",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("PM")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("PR")
+			f.Intrinsic.String.Build("{0}-501-001",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("SM")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("SR")
+			f.Intrinsic.String.Build("{0}-501-003",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("TM")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("WM")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("WR")
+			f.Intrinsic.String.Build("{0}-501-001",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+			F.Intrinsic.Control.Case("ZZ")
+			f.Intrinsic.String.Build("{0}-501-002",v.Local.sGLAccountSplit(0),v.Local.sGLAccount)
+				f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+				v.Passed.000018.Set(v.Local.sGLAccount)
+			
+		f.Intrinsic.Control.EndIf
+		
+		f.ODBC.con!rst.Close
+	
+		'Testing Purposes	
+'		F.Intrinsic.Control.Case("FG")
+'		f.Intrinsic.String.Build("{0}-501-002",v.ODBC.con!rst.FieldVal!GL_ACC_START,v.Local.sGLAccount)
+'			f.Intrinsic.String.Replace(v.Local.sGLAccount," ","",v.Local.sGLAccount)
+'			v.Passed.000018.Set(v.Local.sGLAccount)
+						
+	f.Intrinsic.Control.EndSelect
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.ProdLineChange.End
+
+Program.Sub.ErrorMsg.Start
+v.Local.sError.Declare
+f.Intrinsic.String.Build("Project GCG_6896_ORD_HEAD_DIV.g2u {0}{0}Subroutine: {1}{0}Error: {2} with Description: {3}", v.Ambient.NewLine, v.Args.CurrentSub, v.Ambient.ErrorNumber, v.Ambient.ErrorDescription, v.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+f.ODBC.Connection!con.Close
+f.Intrinsic.Control.End
+Program.Sub.ErrorMsg.End
+
+Program.Sub.Comments.Start
+${$5$}$20.1.8375.18744$}$1
+${$6$}$globalshop$}$20230202153442941$}$N6KCk/5vhz5oyVlDG2B4g8eDioysVRnIfCc0oO/RIbre/PCQnqlZLtTDUZ7d4AEywDbCxFl3a0NHa8FgBFgKIw==
+Program.Sub.Comments.End
