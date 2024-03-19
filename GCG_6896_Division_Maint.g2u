@@ -1,0 +1,204 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Division_Maint..Create(BaseForm)
+Gui.Division_Maint..Caption("Division Maintenance")
+Gui.Division_Maint..Size(309,227)
+Gui.Division_Maint..MinX(0)
+Gui.Division_Maint..MinY(0)
+Gui.Division_Maint..Position(0,0)
+Gui.Division_Maint..AlwaysOnTop(False)
+Gui.Division_Maint..FontName("Tahoma")
+Gui.Division_Maint..FontSize(8.25)
+Gui.Division_Maint..ControlBox(True)
+Gui.Division_Maint..MaxButton(False)
+Gui.Division_Maint..MinButton(False)
+Gui.Division_Maint..MousePointer(0)
+Gui.Division_Maint..Moveable(True)
+Gui.Division_Maint..Sizeable(False)
+Gui.Division_Maint..ShowInTaskBar(True)
+Gui.Division_Maint..TitleBar(True)
+Gui.Division_Maint..Event(UnLoad,Division_Maint_UnLoad)
+Gui.Division_Maint.lbl1.Create(Label,"Enter or Select Division",True,132,16,0,10,11,True,0,"Tahoma",7.8,,0,0)
+Gui.Division_Maint.lbl1.BorderStyle(0)
+Gui.Division_Maint.txt_Div.Create(TextBox,"",True,266,22,0,10,31,True,0,"Tahoma",7.8,,1)
+Gui.Division_Maint.cmd_Div.Create(Button)
+Gui.Division_Maint.cmd_Div.Enabled(True)
+Gui.Division_Maint.cmd_Div.Visible(True)
+Gui.Division_Maint.cmd_Div.Zorder(0)
+Gui.Division_Maint.cmd_Div.Size(21,18)
+Gui.Division_Maint.cmd_Div.Position(281,30)
+Gui.Division_Maint.cmd_Div.Caption("^")
+Gui.Division_Maint.cmd_Div.FontName("Tahoma")
+Gui.Division_Maint.cmd_Div.FontSize(7.8)
+Gui.Division_Maint.cmd_Div.Event(Click,cmd_Div_Click)
+Gui.Division_Maint.lbl2.Create(Label,"Starting GL Account",True,112,16,0,10,104,True,0,"Tahoma",7.8,,0,0)
+Gui.Division_Maint.lbl2.BorderStyle(0)
+Gui.Division_Maint.txt_GL.Create(TextBox,"",True,266,22,0,10,123,True,0,"Tahoma",7.8,,1)
+Gui.Division_Maint.cmd_Submit.Create(Button)
+Gui.Division_Maint.cmd_Submit.Enabled(True)
+Gui.Division_Maint.cmd_Submit.Visible(True)
+Gui.Division_Maint.cmd_Submit.Zorder(0)
+Gui.Division_Maint.cmd_Submit.Size(94,29)
+Gui.Division_Maint.cmd_Submit.Position(10,154)
+Gui.Division_Maint.cmd_Submit.Caption("Submit")
+Gui.Division_Maint.cmd_Submit.FontName("Tahoma")
+Gui.Division_Maint.cmd_Submit.FontSize(7.8)
+Gui.Division_Maint.cmd_Submit.Event(Click,cmd_Submit_Click)
+Gui.Division_Maint.cmd_Clear.Create(Button)
+Gui.Division_Maint.cmd_Clear.Enabled(True)
+Gui.Division_Maint.cmd_Clear.Visible(True)
+Gui.Division_Maint.cmd_Clear.Zorder(0)
+Gui.Division_Maint.cmd_Clear.Size(94,29)
+Gui.Division_Maint.cmd_Clear.Position(110,154)
+Gui.Division_Maint.cmd_Clear.Caption("Clear")
+Gui.Division_Maint.cmd_Clear.FontName("Tahoma")
+Gui.Division_Maint.cmd_Clear.FontSize(7.8)
+Gui.Division_Maint.cmd_Clear.Event(Click,cmd_Clear_Click)
+Gui.Division_Maint.cmd_Delete.Create(Button)
+Gui.Division_Maint.cmd_Delete.Enabled(True)
+Gui.Division_Maint.cmd_Delete.Visible(True)
+Gui.Division_Maint.cmd_Delete.Zorder(0)
+Gui.Division_Maint.cmd_Delete.Size(94,29)
+Gui.Division_Maint.cmd_Delete.Position(212,154)
+Gui.Division_Maint.cmd_Delete.Caption("Delete")
+Gui.Division_Maint.cmd_Delete.FontName("Tahoma")
+Gui.Division_Maint.cmd_Delete.FontSize(7.8)
+Gui.Division_Maint.cmd_Delete.Event(Click,cmd_Delete_Click)
+Gui.Division_Maint.lbl3.Create(Label,"Description",True,63,16,0,10,56,True,0,"Tahoma",7.8,,0,0)
+Gui.Division_Maint.lbl3.BorderStyle(0)
+Gui.Division_Maint.txt_Desc.Create(TextBox,"",True,265,22,0,10,74,True,0,"Tahoma",7.8,,1)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+' Developed on 09/13/2022
+' Cutting Edge Supply
+' Division Code Maintenance
+' Business case: Program will allow the user to generate and alter Division Codes that are tied to GL accounts. These will also be availble to tie to sales order in Sales Order Header.
+F.ODBC.Connection!con.OpenCompanyConnection(300)
+gui.Division_Maint.txt_Div.MaxLength(3)
+gui.Division_Maint.txt_Desc.MaxLength(30)
+gui.Division_Maint.txt_GL.MaxLength(10)
+gui.Division_Maint..Show()
+Program.Sub.Main.End
+
+Program.Sub.cmd_Div_Click.Start
+v.Local.sRet.Declare
+v.Local.sTemp.Declare
+v.Local.sTitles.Declare
+v.Local.iWidths.Declare
+f.Intrinsic.Control.Try
+	'Browser to bring up Division Codes
+	Function.Intrinsic.String.Split("Division Code*!*Description*!*GL Account Start","*!*",variable.local.sTitles)
+	Function.Intrinsic.String.Split("1000*!*800*!*800","*!*",variable.local.iWidths)
+	Function.Intrinsic.UI.Browser("Select a Division","con","Select * from GCG_6896_DIV_GL order by GL_ACC_START",Variable.Local.sTitles,Variable.Local.iWidths,Variable.Local.sRet)
+	'Place selection in Text boxes
+	f.Intrinsic.Control.If(Variable.Local.sRet,<>,"***CANCEL***")
+		f.Intrinsic.String.Split(v.Local.sRet,"*!*",v.Local.sRet)
+		gui.Division_Maint.txt_Div.Text(v.Local.sRet(0))
+		gui.Division_Maint.txt_Desc.Text(v.Local.sRet(1))
+		gui.Division_Maint.txt_GL.Text(v.Local.sRet(2))
+	f.Intrinsic.Control.EndIf
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmd_Div_Click.End
+
+Program.Sub.ErrorMsg.Start
+v.Local.sError.Declare
+f.Intrinsic.String.Build("Project GCG_6896_Division_Maint.g2u {0}{0}Subroutine: {1}{0}Error: {2} with Description: {3}", v.Ambient.NewLine, v.Args.CurrentSub, v.Ambient.ErrorNumber, v.Ambient.ErrorDescription, v.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+f.ODBC.Connection!con.Close
+f.Intrinsic.Control.End
+Program.Sub.ErrorMsg.End
+
+Program.Sub.Division_Maint_UnLoad.Start
+f.Intrinsic.Control.End
+Program.Sub.Division_Maint_UnLoad.End
+
+Program.Sub.cmd_Submit_Click.Start
+v.Local.sRet.Declare
+v.Local.sSQL.Declare
+v.Local.iRet.Declare
+f.Intrinsic.Control.Try
+	
+	'If nothing is entered, ask user to enter code
+	f.Intrinsic.Control.If(V.Screen.Division_Maint!txt_Div.Text,=,"")
+		f.Intrinsic.UI.Msgbox("Please enter a Division Code")
+	f.Intrinsic.Control.Else
+		'Look for existing record with entered Division Code
+		f.Intrinsic.String.Build("Select * from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",V.Screen.Division_Maint!txt_Div.Text,v.Local.sSQL)
+		f.ODBC.Connection!con.OpenRecordsetRW("rst",v.Local.sSQL)
+		
+		'If no record found, add new record
+		f.Intrinsic.Control.If(v.ODBC.con!rst.EOF)
+			F.ODBC.con!rst.AddNew
+			f.ODBC.con!rst.Set!DIVISION_CODE(V.Screen.Division_Maint!txt_Div.Text)
+			f.ODBC.con!rst.Set!DIVISION_DESC(V.Screen.Division_Maint!txt_Desc.Text)
+			f.ODBC.con!rst.Set!GL_ACC_START(V.Screen.Division_Maint!txt_GL.Text)
+			F.ODBC.con!rst.Update
+			f.Intrinsic.UI.Msgbox("New Division Code Added","Division Maintenance",0,v.Local.iRet)
+		'If record is found, alter existing record
+		f.Intrinsic.Control.Else
+			f.ODBC.con!rst.Set!DIVISION_CODE(V.Screen.Division_Maint!txt_Div.Text)
+			f.ODBC.con!rst.Set!DIVISION_DESC(V.Screen.Division_Maint!txt_Desc.Text)
+			f.ODBC.con!rst.Set!GL_ACC_START(V.Screen.Division_Maint!txt_GL.Text)
+			F.ODBC.con!rst.Update
+			f.Intrinsic.UI.Msgbox("Existing Division Code Altered","Division Maintenance",0,v.Local.iRet)
+		f.Intrinsic.Control.EndIf	
+	f.Intrinsic.Control.EndIf
+		
+	f.ODBC.con!rst.Close()
+	gui.Division_Maint.txt_Div.Text("")
+	gui.Division_Maint.txt_Desc.Text("")
+	gui.Division_Maint.txt_GL.Text("")
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmd_Submit_Click.End
+
+Program.Sub.cmd_Clear_Click.Start
+v.Local.sRet.Declare
+f.Intrinsic.Control.Try
+	'Clear textboxes
+	gui.Division_Maint.txt_Div.Text("")
+	gui.Division_Maint.txt_Desc.Text("")
+	gui.Division_Maint.txt_GL.Text("")
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmd_Clear_Click.End
+
+Program.Sub.cmd_Delete_Click.Start
+v.Local.sSQL.Declare
+v.Local.iRet.Declare
+v.Local.sDivisionCode.Declare
+f.Intrinsic.Control.Try
+	
+	'Ask user if they want to delete record
+	f.Intrinsic.String.Build("Delete Division Code {0}?",V.Screen.Division_Maint!txt_Div.Text,v.Local.sDivisionCode)
+	f.Intrinsic.UI.Msgbox(v.Local.sDivisionCode,"Division Maintenance",1,v.Local.iRet)
+	
+	'If user selects yes, then delete record
+	f.Intrinsic.Control.If(v.Local.iRet,=,1)	
+		f.Intrinsic.String.Build("delete from GCG_6896_DIV_GL where DIVISION_CODE = '{0}'",V.Screen.Division_Maint!txt_Div.Text,v.Local.sSQL)
+		f.ODBC.Connection!con.Execute(v.Local.sSQL)	
+		'Clear Text boxes
+		gui.Division_Maint.txt_Div.Text("")
+		gui.Division_Maint.txt_Desc.Text("")
+		gui.Division_Maint.txt_GL.Text("")
+	f.Intrinsic.Control.EndIf
+		
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmd_Delete_Click.End
+
+Program.Sub.Comments.Start
+${$5$}$3.0.0.0$}$1
+${$6$}$ghuff$}$20220919131922949$}$s89N93NTeas40rhsU1ZwRbCBj1OiVVM1zSdSv7/JO/gdNheUhQhg5xbg/vj77B9gv4dpLOnZOJg=
+Program.Sub.Comments.End
